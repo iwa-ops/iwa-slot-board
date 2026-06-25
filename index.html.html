@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>London BizAv — Slot & Hours Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0e151d; --panel:#162029; --panel-2:#1c2832;
+    --line:#2a3845; --line-soft:#222e39;
+    --text:#e7edf2; --text-dim:#8ea0b0; --text-faint:#5e6f7d;
+    --open:#3fa78c; --open-cell:#1f4a42;
+    --limited:#d99a45; --limited-cell:#4a3a1d;
+    --closed:#b9545a; --closed-cell:#3a2226;
+    --now:#5fd0e0;
+    --display:'Space Grotesk',system-ui,sans-serif;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:var(--ink);color:var(--text);font-family:var(--display);line-height:1.45;
+    padding:clamp(14px,3vw,34px);
+    background-image:radial-gradient(900px 500px at 80% -10%,rgba(95,208,224,.06),transparent 60%);
+  }
+  .wrap{max-width:1240px;margin:0 auto}
+  header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:22px}
+  .title-block h1{font-size:clamp(20px,3.2vw,30px);font-weight:700;letter-spacing:-.01em;line-height:1.1}
+  .title-block .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--now);margin-bottom:8px;display:block}
+  .title-block p{color:var(--text-dim);font-size:13.5px;margin-top:6px;max-width:46ch}
+  .clock{text-align:right;font-family:var(--mono)}
+  .clock .lt{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--text-faint)}
+  .clock .time{font-size:26px;font-weight:600;color:var(--text);line-height:1.1}
+  .clock .day{font-size:12px;color:var(--text-dim);margin-top:2px}
+  .controls{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-bottom:16px}
+  .toggle{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
+  .toggle button{font-family:var(--mono);font-size:12px;letter-spacing:.04em;background:transparent;border:0;color:var(--text-dim);padding:7px 14px;border-radius:7px;cursor:pointer;transition:.15s}
+  .toggle button:hover{color:var(--text)}
+  .toggle button[aria-pressed="true"]{background:var(--panel-2);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--text-dim);font-family:var(--mono)}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .swatch{width:13px;height:13px;border-radius:3px;display:inline-block}
+  .sw-open{background:var(--open-cell);box-shadow:inset 0 0 0 1px var(--open)}
+  .sw-lim{background:var(--limited-cell);box-shadow:inset 0 0 0 1px var(--limited)}
+  .sw-cl{background:var(--closed-cell);box-shadow:inset 0 0 0 1px var(--closed)}
+  .board{margin-top:18px;border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:auto;-webkit-overflow-scrolling:touch}
+  table{border-collapse:separate;border-spacing:0;width:100%;min-width:930px}
+  thead th{position:sticky;top:0;z-index:3;background:var(--panel-2);font-family:var(--mono);font-weight:500;font-size:11px;color:var(--text-dim);padding:9px 0;text-align:center;border-bottom:1px solid var(--line)}
+  thead th.corner{left:0;z-index:5;text-align:left;padding-left:16px;min-width:236px;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-faint)}
+  th.hour.now-col{color:var(--now)}
+  tbody td.apt{position:sticky;left:0;z-index:2;background:var(--panel);border-bottom:1px solid var(--line-soft);border-right:1px solid var(--line);padding:0}
+  .apt-btn{width:100%;display:flex;align-items:center;gap:11px;background:transparent;border:0;color:inherit;cursor:pointer;text-align:left;padding:10px 14px;min-width:236px;transition:background .15s}
+  .apt-btn:hover{background:var(--panel-2)}
+  .apt-meta{display:flex;flex-direction:column;gap:1px;line-height:1.2}
+  .icao{font-family:var(--mono);font-weight:600;font-size:14px;letter-spacing:.02em;color:var(--text)}
+  .apt-name{font-size:11.5px;color:var(--text-dim)}
+  .apt-hrs{font-family:var(--mono);font-size:10.5px;color:var(--text-faint);letter-spacing:.01em;margin-top:2px;white-space:nowrap}
+  .chev{margin-left:auto;color:var(--text-faint);font-size:11px;transition:transform .2s}
+  tr.open-row .chev{transform:rotate(90deg);color:var(--now)}
+  tbody td.cell{height:42px;border-bottom:1px solid var(--line-soft);border-right:1px solid var(--line-soft);position:relative}
+  td.cell.s-open{background:var(--open-cell)}
+  td.cell.s-limited{background:var(--limited-cell)}
+  td.cell.s-closed{background:var(--closed-cell);opacity:.85}
+  td.cell.now-col{box-shadow:inset 2px 0 0 var(--now),inset -2px 0 0 var(--now)}
+  thead th.hour.now-col{box-shadow:inset 2px 0 0 var(--now),inset -2px 0 0 var(--now)}
+  td.cell.s-limited::after{content:"";position:absolute;inset:0;background-image:repeating-linear-gradient(45deg,transparent 0 5px,rgba(217,154,69,.22) 5px 10px)}
+  tr.detail td{padding:0;background:var(--panel-2);border-bottom:1px solid var(--line)}
+  .detail-inner{padding:16px 18px;display:grid;grid-template-columns:1.3fr 1fr;gap:20px}
+  .detail-inner h3{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-faint);font-family:var(--mono);margin-bottom:8px}
+  .detail-inner p{font-size:13px;color:var(--text-dim);line-height:1.55}
+  .hours-line{font-family:var(--mono);font-size:12.5px;color:var(--text);margin-bottom:9px}
+  .fbo{display:flex;flex-direction:column;gap:6px}
+  .fbo a{font-family:var(--mono);font-size:12px;color:var(--now);text-decoration:none;display:flex;gap:8px;align-items:baseline}
+  .fbo a:hover{text-decoration:underline}
+  .fbo .fbo-name{color:var(--text-dim);min-width:78px;display:inline-block}
+  .now-strip{margin-top:20px;border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:14px 16px}
+  .now-strip h2{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-faint);margin-bottom:11px}
+  .pills{display:flex;flex-wrap:wrap;gap:8px}
+  .pill{font-family:var(--mono);font-size:12px;padding:5px 10px;border-radius:7px;display:inline-flex;gap:7px;align-items:center}
+  .pill.p-open{background:var(--open-cell);color:#bdeede;box-shadow:inset 0 0 0 1px var(--open)}
+  .pill.p-lim{background:var(--limited-cell);color:#f2d49b;box-shadow:inset 0 0 0 1px var(--limited)}
+  .pill b{font-weight:600}
+  footer{margin-top:18px;color:var(--text-faint);font-size:11.5px;font-family:var(--mono);line-height:1.6}
+  footer .caps{color:var(--limited)}
+  @media (max-width:640px){
+    .detail-inner{grid-template-columns:1fr}
+    .clock{text-align:left}
+    header{align-items:flex-start}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title-block">
+      <span class="eyebrow">London &amp; Region · BizAv Operations</span>
+      <h1>Slot &amp; Hours Board</h1>
+      <p>Hour-by-hour availability across the London airports. Read down a column to see what's usable right now — all times are <b>local</b>.</p>
+    </div>
+    <div class="clock">
+      <div class="lt">London local</div>
+      <div class="time" id="clockTime">--:--</div>
+      <div class="day" id="clockDay">—</div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="toggle" role="group" aria-label="Day type">
+      <button data-day="wd" aria-pressed="true">Weekday</button>
+      <button data-day="sat" aria-pressed="false">Saturday</button>
+      <button data-day="sun" aria-pressed="false">Sunday</button>
+    </div>
+    <div class="legend">
+      <span><i class="swatch sw-open"></i>Open</span>
+      <span><i class="swatch sw-lim"></i>On request / restricted</span>
+      <span><i class="swatch sw-cl"></i>Closed / no slots</span>
+    </div>
+  </div>
+
+  <div class="board"><table id="board"></table></div>
+
+  <div class="now-strip">
+    <h2 id="nowHeading">Available at the current hour</h2>
+    <div class="pills" id="nowPills"></div>
+  </div>
+
+  <footer>
+    Hours line reads <span class="caps">Open [hours] · [restriction]</span>. Amber = on request / restricted, red = closed or no slots. Night noise quotas, PPR and slot limits apply — board shows scheduled availability, not a guaranteed slot. Bank holidays follow weekend hours where noted. Source: IWA London airports night-ops brief.
+  </footer>
+</div>
+
+<script>
+const R = (open=[],limited=[]) => ({open,limited});
+const airports = [
+  {icao:"EGLL", name:"Heathrow",
+   hrs:{wd:"Open H24 · BizAv slots scarce", sat:"Open H24 · BizAv slots scarce", sun:"Open H24 · BizAv slots scarce"},
+   note:"Open 24h, but a noise quota runs 2300–0700 and BizAv slots are very rarely issued — go via the handler. Single FBO (Signature).",
+   fbos:[{n:"Signature",e:"lhr@signatureflight.co.uk"}],
+   rules:{wd:R([],[[7,22]]), sat:R([],[[7,22]]), sun:R([],[[7,22]])}},
+
+  {icao:"EGKK", name:"Gatwick",
+   hrs:{wd:"Open H24 · BizAv slots scarce", sat:"Open H24 · BizAv slots scarce", sun:"Open H24 · BizAv slots scarce"},
+   note:"As Heathrow — open 24h, noise quota 2300–0700, and BizAv slots almost never issued at night. Single FBO (Signature).",
+   fbos:[{n:"Signature",e:"lgw@signatureflight.co.uk"}],
+   rules:{wd:R([],[[7,22]]), sat:R([],[[7,22]]), sun:R([],[[7,22]])}},
+
+  {icao:"EGGW", name:"Luton",
+   hrs:{wd:"Open H24 · night restricted 2300–0659", sat:"Open H24 · night restricted 2300–0659", sun:"Open H24 · night restricted 2300–0659"},
+   note:"Open 24h. Night window 2300–0659 is restricted, not closed: limited to quieter aircraft (QC 0.5 or less), with a small monthly quota (Signature 6 movements, Harrods 4) and manual slot approval via the FBO.",
+   fbos:[{n:"Signature",e:"ltn@signatureflight.co.uk"},{n:"Harrods",e:"ltnops@harrodsaviation.com"}],
+   rules:{wd:R([[7,22]],[[23,23],[0,6]]), sat:R([[7,22]],[[23,23],[0,6]]), sun:R([[7,22]],[[23,23],[0,6]])}},
+
+  {icao:"EGSS", name:"Stansted",
+   hrs:{wd:"Open H24 · no slots 2330–0600", sat:"Open H24 · no slots 2330–0600", sun:"Open H24 · no slots 2330–0600"},
+   note:"Open 24h, but tightened this summer — no BizAv slots are available 2330–0600. Last evening slot is before 2330.",
+   fbos:[{n:"Inflite",e:"operations@inflite.co.uk"},{n:"Universal",e:"uk@universalaviation.aero"},{n:"Harrods",e:"stnops@harrodsaviation.com"}],
+   rules:{wd:R([[6,22]],[[23,23]]), sat:R([[6,22]],[[23,23]]), sun:R([[6,22]],[[23,23]])}},
+
+  {icao:"EGLC", name:"London City",
+   hrs:{wd:"Open 0630–2130", sat:"Open 0630–1230", sun:"Open 1230–2130"},
+   note:"Strict closing — any delay means a diversion. Hours differ by day: Mon–Fri 0630–2130, Sat 0630–1230, Sun 1230–2130.",
+   fbos:[{n:"Jet Centre",e:"jetcentre@londoncityairport.com"}],
+   rules:{wd:R([[6,21]]), sat:R([[6,12]]), sun:R([[12,21]])}},
+
+  {icao:"EGTK", name:"London Oxford",
+   hrs:{wd:"Open 0630–2230 · to 2359 on request", sat:"Open 0630–2230 · to 2359 on request", sun:"Open 0630–2230 · to 2359 on request"},
+   note:"Open 0630–2230, extendable to 2359 on request, 7 days. Furthest from London (~1h drive) but materially cheaper handling.",
+   fbos:[{n:"Jet Centre",e:"ops@londonoxfordairport.com"}],
+   rules:{wd:R([[6,22]],[[23,23]]), sat:R([[6,22]],[[23,23]]), sun:R([[6,22]],[[23,23]])}},
+
+  {icao:"EGLF", name:"Farnborough",
+   hrs:{wd:"Open 0700–2200", sat:"Open 0800–2000", sun:"Open 0800–2000"},
+   note:"Dedicated BizAv airport — no extensions possible. Mon–Fri 0700–2200, weekends 0800–2000.",
+   fbos:[{n:"Airport Ops",e:"ops@farnboroughairport.com"}],
+   rules:{wd:R([[7,21]]), sat:R([[8,19]]), sun:R([[8,19]])}},
+
+  {icao:"EGKB", name:"Biggin Hill",
+   hrs:{wd:"Open 0630–2300", sat:"Open 0800–2200", sun:"Open 0800–2200"},
+   note:"No slots required, 12 miles from central London. Mon–Fri 0630–2300, weekends 0800–2200. Bank holidays follow weekend hours.",
+   fbos:[{n:"Executive",e:"handling@bigginhillairport.com"},{n:"Jetex",e:"fbo-bqh@jetex.com"}],
+   rules:{wd:R([[6,22]]), sat:R([[8,21]]), sun:R([[8,21]])}},
+
+  {icao:"EGWU", name:"Northolt",
+   hrs:{wd:"Open 0800–2000 · PPR", sat:"Open 1000–1700 · PPR", sun:"Open 1000–1700 · PPR"},
+   note:"PPR required (military/civil), normally quick to approve. Closest BizAv field to Heathrow. Tower works ongoing, minimal disruption. Mon–Fri 0800–2000, weekends/holidays 1000–1700.",
+   fbos:[{n:"Universal",e:"northolt@universalaviation.aero"}],
+   rules:{wd:R([[8,19]]), sat:R([[10,16]]), sun:R([[10,16]])}},
+
+  {icao:"EGMC", name:"Southend",
+   hrs:{wd:"Open 0600–0130 · ext to 0230", sat:"Open 0600–0130 · ext to 0230", sun:"Open 0600–0130 · ext to 0230"},
+   note:"Open 0600–0130 daily; extensions to 0230 by coordination with the handler. 24h prior notice required due to ATC.",
+   fbos:[{n:"Southend JC",e:"ops@londonsjc.com"}],
+   rules:{wd:R([[6,23],[0,1]],[[2,2]]), sat:R([[6,23],[0,1]],[[2,2]]), sun:R([[6,23],[0,1]],[[2,2]])}},
+
+  {icao:"EGBB", name:"Birmingham",
+   hrs:{wd:"Open H24 · night on request", sat:"Open H24 · night on request", sun:"Open H24 · night on request"},
+   note:"Not a London airport — but the next-closest field open at night. Open 24h, though night ops are on request with out-of-hours fees and a limited night-slot quota.",
+   fbos:[{n:"XLR",e:"jetcentre@xlrbirmingham.com"},{n:"Signature",e:"bhx@signatureflight.co.uk"}],
+   rules:{wd:R([[7,22]],[[23,23],[0,6]]), sat:R([[7,22]],[[23,23],[0,6]]), sun:R([[7,22]],[[23,23],[0,6]])}}
+];
+
+const inRange=(h,ranges)=>ranges.some(([a,b])=>h>=a&&h<=b);
+function statusFor(apt,day,h){
+  const r=apt.rules[day];
+  if(inRange(h,r.open)) return "open";
+  if(inRange(h,r.limited)) return "limited";
+  return "closed";
+}
+function londonNow(){
+  const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/London',weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date());
+  const get=t=>parts.find(p=>p.type===t)?.value;
+  let hour=parseInt(get('hour'),10); if(hour===24) hour=0;
+  const wd=get('weekday');
+  const dayType=wd==='Sat'?'sat':wd==='Sun'?'sun':'wd';
+  return {hour,minute:get('minute'),weekday:wd,dayType,
+    full:new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/London',weekday:'long',day:'numeric',month:'short'}).format(new Date())};
+}
+let currentDay=londonNow().dayType;
+let openDetail=null;
+const pad=n=>String(n).padStart(2,'0');
+
+function render(){
+  const now=londonNow();
+  const nowHour=now.dayType===currentDay?now.hour:-1;
+  const t=document.getElementById('board');
+  let html='<thead><tr><th class="corner">Airport · Hours</th>';
+  for(let h=0;h<24;h++) html+=`<th class="hour${h===nowHour?' now-col':''}">${pad(h)}</th>`;
+  html+='</tr></thead><tbody>';
+  airports.forEach((apt,i)=>{
+    const isOpen=openDetail===i;
+    html+=`<tr class="${isOpen?'open-row':''}">`;
+    html+=`<td class="apt"><button class="apt-btn" data-apt="${i}">
+      <span class="apt-meta">
+        <span class="icao">${apt.icao}</span>
+        <span class="apt-name">${apt.name}</span>
+        <span class="apt-hrs">${apt.hrs[currentDay]}</span>
+      </span>
+      <span class="chev">▸</span></button></td>`;
+    for(let h=0;h<24;h++){
+      const s=statusFor(apt,currentDay,h);
+      html+=`<td class="cell s-${s}${h===nowHour?' now-col':''}"></td>`;
+    }
+    html+='</tr>';
+    if(isOpen){
+      const fbos=apt.fbos.map(f=>`<a href="mailto:${f.e}"><span class="fbo-name">${f.n}</span>${f.e}</a>`).join('');
+      html+=`<tr class="detail"><td colspan="25"><div class="detail-inner">
+        <div>
+          <h3>Hours · ${currentDay==='wd'?'Weekday':currentDay==='sat'?'Saturday':'Sunday'}</h3>
+          <div class="hours-line">${apt.hrs[currentDay]}</div>
+          <p>${apt.note}</p>
+        </div>
+        <div><h3>Handling / FBO</h3><div class="fbo">${fbos}</div></div>
+      </div></td></tr>`;
+    }
+  });
+  html+='</tbody>';
+  t.innerHTML=html;
+  document.getElementById('clockTime').textContent=`${pad(now.hour)}:${now.minute}`;
+  document.getElementById('clockDay').textContent=now.full;
+  renderNowStrip(now);
+  t.querySelectorAll('.apt-btn').forEach(b=>{
+    b.addEventListener('click',()=>{
+      const idx=parseInt(b.dataset.apt,10);
+      openDetail=openDetail===idx?null:idx;
+      render();
+    });
+  });
+}
+function renderNowStrip(now){
+  const heading=document.getElementById('nowHeading');
+  const pillsEl=document.getElementById('nowPills');
+  if(now.dayType!==currentDay){
+    heading.textContent=`Viewing ${currentDay==='wd'?'weekday':currentDay==='sat'?'Saturday':'Sunday'} — switch to today to see live availability`;
+    pillsEl.innerHTML=''; return;
+  }
+  heading.textContent=`Available now · ${pad(now.hour)}:00 London`;
+  const open=[],lim=[];
+  airports.forEach(a=>{
+    const s=statusFor(a,currentDay,now.hour);
+    if(s==='open') open.push(a); else if(s==='limited') lim.push(a);
+  });
+  let h='';
+  open.forEach(a=>h+=`<span class="pill p-open"><b>${a.icao}</b> ${a.name}</span>`);
+  lim.forEach(a=>h+=`<span class="pill p-lim"><b>${a.icao}</b> on request</span>`);
+  if(!h) h='<span class="pill p-lim">No fields open at this hour</span>';
+  pillsEl.innerHTML=h;
+}
+document.querySelectorAll('.toggle button').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    currentDay=btn.dataset.day;
+    document.querySelectorAll('.toggle button').forEach(b=>b.setAttribute('aria-pressed',b===btn));
+    render();
+  });
+});
+document.querySelectorAll('.toggle button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.day===currentDay));
+render();
+setInterval(render,60000);
+</script>
+</body>
+</html>
