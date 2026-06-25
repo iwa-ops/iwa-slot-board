@@ -187,7 +187,7 @@ const airports = [
 
   {icao:"EGLF", name:"Farnborough",
    hrs:{wd:"Open 0700–2200", sat:"Open 0800–2000", sun:"Open 0800–2000"},
-   note:"Dedicated BizAv airport — no extensions possible. Mon–Fri 0700–2200, weekends 0800–2000.",
+   note:"Dedicated BizAv airport — no extensions possible. Mon–Fri 0700–2200, weekends 0800–2000. Bank holidays follow weekend hours.",
    fbos:[{n:"Airport Ops",e:"ops@farnboroughairport.com"}],
    rules:{wd:R([[7,21]]), sat:R([[8,19]]), sun:R([[8,19]])}},
 
@@ -198,8 +198,8 @@ const airports = [
    rules:{wd:R([[6,22]]), sat:R([[8,21]]), sun:R([[8,21]])}},
 
   {icao:"EGWU", name:"Northolt",
-   hrs:{wd:"Open 0800–2000 · PPR", sat:"Open 1000–1700 · PPR", sun:"Open 1000–1700 · PPR"},
-   note:"PPR required (military/civil), normally quick to approve. Closest BizAv field to Heathrow. Tower works ongoing, minimal disruption. Mon–Fri 0800–2000, weekends/holidays 1000–1700.",
+   hrs:{wd:"Open 0800–2000 · PPR · check NOTAMs", sat:"Open 1000–1700 · PPR · check NOTAMs", sun:"Open 1000–1700 · PPR · check NOTAMs"},
+   note:"PPR required (military/civil), normally quick to approve. Closest BizAv field to Heathrow. Tower works ongoing — always check NOTAMs for current opening hours, as these can change. Mon–Fri 0800–2000, weekends/holidays 1000–1700.",
    fbos:[{n:"Universal",e:"northolt@universalaviation.aero"}],
    rules:{wd:R([[8,19]]), sat:R([[10,16]]), sun:R([[10,16]])}},
 
