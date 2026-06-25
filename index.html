@@ -3,87 +3,95 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>London BizAv — Slot & Hours Board</title>
+<title>IWA — London Slot & Hours Board</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ink:#0e151d; --panel:#162029; --panel-2:#1c2832;
-    --line:#2a3845; --line-soft:#222e39;
-    --text:#e7edf2; --text-dim:#8ea0b0; --text-faint:#5e6f7d;
-    --open:#3fa78c; --open-cell:#1f4a42;
-    --limited:#d99a45; --limited-cell:#4a3a1d;
-    --closed:#b9545a; --closed-cell:#3a2226;
-    --now:#5fd0e0;
-    --display:'Space Grotesk',system-ui,sans-serif;
+    --cobalt:#004C97; --stone:#9EA2A2; --sky:#7BA7BC; --snow:#ffffff;
+    --bg:#363c44; --panel:#3f4650; --panel-2:#48505b;
+    --line:#566069; --line-soft:#4b535d;
+    --text:#eef1f5; --text-dim:#bcc6cf; --text-faint:#8893a0;
+    --stone-l:#cdd3d8;
+    --open:#4cbb9a; --open-cell:#2e6054;
+    --limited:#e3a85c; --limited-cell:#5d4a2b;
+    --closed:#d4787f; --closed-cell:#533236;
+    --accent:var(--sky);
+    --serif:'Cormorant Garamond',Georgia,serif;
+    --sans:'Inter',system-ui,sans-serif;
     --mono:'IBM Plex Mono',ui-monospace,monospace;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{-webkit-text-size-adjust:100%}
   body{
-    background:var(--ink);color:var(--text);font-family:var(--display);line-height:1.45;
+    background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.45;
     padding:clamp(14px,3vw,34px);
-    background-image:radial-gradient(900px 500px at 80% -10%,rgba(95,208,224,.06),transparent 60%);
+    background-image:radial-gradient(900px 500px at 84% -14%,rgba(123,167,188,.10),transparent 60%);
   }
   .wrap{max-width:1240px;margin:0 auto}
   header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:22px}
-  .title-block h1{font-size:clamp(20px,3.2vw,30px);font-weight:700;letter-spacing:-.01em;line-height:1.1}
-  .title-block .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--now);margin-bottom:8px;display:block}
-  .title-block p{color:var(--text-dim);font-size:13.5px;margin-top:6px;max-width:46ch}
+  .brand{display:flex;flex-direction:column;gap:2px;margin-bottom:14px}
+  .brand-mark{display:flex;align-items:center;gap:4px;font-family:var(--serif);font-weight:700;font-size:34px;line-height:1;letter-spacing:.01em}
+  .brand-mark .m-iw{color:var(--stone-l)}
+  .brand-mark .m-a{color:var(--sky)}
+  .brand-mark .m-jet{width:22px;height:22px;margin-left:1px;color:var(--sky);transform:translateY(-1px)}
+  .brand-sub{font-family:var(--sans);font-weight:300;font-size:9.5px;letter-spacing:.34em;text-transform:uppercase;color:var(--stone)}
+  .title-block h1{font-family:var(--serif);font-size:clamp(26px,4vw,40px);font-weight:600;letter-spacing:.005em;line-height:1.05;color:var(--snow)}
+  .title-block p{color:var(--text-dim);font-size:13.5px;margin-top:8px;max-width:48ch}
   .clock{text-align:right;font-family:var(--mono)}
-  .clock .lt{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--text-faint)}
-  .clock .time{font-size:26px;font-weight:600;color:var(--text);line-height:1.1}
-  .clock .day{font-size:12px;color:var(--text-dim);margin-top:2px}
+  .clock .lt{font-family:var(--sans);font-weight:300;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--text-faint)}
+  .clock .time{font-size:26px;font-weight:600;color:var(--text);line-height:1.1;margin-top:2px}
+  .clock .day{font-family:var(--sans);font-size:12px;color:var(--text-dim);margin-top:2px}
   .controls{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-bottom:16px}
   .toggle{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
-  .toggle button{font-family:var(--mono);font-size:12px;letter-spacing:.04em;background:transparent;border:0;color:var(--text-dim);padding:7px 14px;border-radius:7px;cursor:pointer;transition:.15s}
-  .toggle button:hover{color:var(--text)}
-  .toggle button[aria-pressed="true"]{background:var(--panel-2);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
-  .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--text-dim);font-family:var(--mono)}
+  .toggle button{font-family:var(--sans);font-weight:500;font-size:12px;letter-spacing:.05em;text-transform:uppercase;background:transparent;border:0;color:var(--text-dim);padding:7px 15px;border-radius:7px;cursor:pointer;transition:.15s}
+  .toggle button:hover{color:var(--snow)}
+  .toggle button[aria-pressed="true"]{background:var(--cobalt);color:var(--snow);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:11.5px;color:var(--text-dim);font-family:var(--sans);font-weight:400}
   .legend span{display:inline-flex;align-items:center;gap:7px}
   .swatch{width:13px;height:13px;border-radius:3px;display:inline-block}
   .sw-open{background:var(--open-cell);box-shadow:inset 0 0 0 1px var(--open)}
   .sw-lim{background:var(--limited-cell);box-shadow:inset 0 0 0 1px var(--limited)}
   .sw-cl{background:var(--closed-cell);box-shadow:inset 0 0 0 1px var(--closed)}
-  .board{margin-top:18px;border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:auto;-webkit-overflow-scrolling:touch}
+  .board{margin-top:18px;border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:auto;-webkit-overflow-scrolling:touch;box-shadow:0 2px 14px rgba(0,0,0,.20)}
   table{border-collapse:separate;border-spacing:0;width:100%;min-width:930px}
   thead th{position:sticky;top:0;z-index:3;background:var(--panel-2);font-family:var(--mono);font-weight:500;font-size:11px;color:var(--text-dim);padding:9px 0;text-align:center;border-bottom:1px solid var(--line)}
-  thead th.corner{left:0;z-index:5;text-align:left;padding-left:16px;min-width:236px;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-faint)}
-  th.hour.now-col{color:var(--now)}
+  thead th.corner{left:0;z-index:5;text-align:left;padding-left:16px;min-width:236px;font-family:var(--sans);font-weight:500;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-faint)}
+  th.hour.now-col{color:var(--sky)}
   tbody td.apt{position:sticky;left:0;z-index:2;background:var(--panel);border-bottom:1px solid var(--line-soft);border-right:1px solid var(--line);padding:0}
   .apt-btn{width:100%;display:flex;align-items:center;gap:11px;background:transparent;border:0;color:inherit;cursor:pointer;text-align:left;padding:10px 14px;min-width:236px;transition:background .15s}
   .apt-btn:hover{background:var(--panel-2)}
   .apt-meta{display:flex;flex-direction:column;gap:1px;line-height:1.2}
   .icao{font-family:var(--mono);font-weight:600;font-size:14px;letter-spacing:.02em;color:var(--text)}
-  .apt-name{font-size:11.5px;color:var(--text-dim)}
+  .apt-name{font-family:var(--sans);font-size:11.5px;color:var(--text-dim)}
   .apt-hrs{font-family:var(--mono);font-size:10.5px;color:var(--text-faint);letter-spacing:.01em;margin-top:2px;white-space:nowrap}
   .chev{margin-left:auto;color:var(--text-faint);font-size:11px;transition:transform .2s}
-  tr.open-row .chev{transform:rotate(90deg);color:var(--now)}
+  tr.open-row .chev{transform:rotate(90deg);color:var(--sky)}
   tbody td.cell{height:42px;border-bottom:1px solid var(--line-soft);border-right:1px solid var(--line-soft);position:relative}
   td.cell.s-open{background:var(--open-cell)}
   td.cell.s-limited{background:var(--limited-cell)}
-  td.cell.s-closed{background:var(--closed-cell);opacity:.85}
-  td.cell.now-col{box-shadow:inset 2px 0 0 var(--now),inset -2px 0 0 var(--now)}
-  thead th.hour.now-col{box-shadow:inset 2px 0 0 var(--now),inset -2px 0 0 var(--now)}
-  td.cell.s-limited::after{content:"";position:absolute;inset:0;background-image:repeating-linear-gradient(45deg,transparent 0 5px,rgba(217,154,69,.22) 5px 10px)}
+  td.cell.s-closed{background:var(--closed-cell)}
+  td.cell.now-col{box-shadow:inset 2px 0 0 var(--sky),inset -2px 0 0 var(--sky)}
+  thead th.hour.now-col{box-shadow:inset 2px 0 0 var(--sky),inset -2px 0 0 var(--sky)}
+  td.cell.s-limited::after{content:"";position:absolute;inset:0;background-image:repeating-linear-gradient(45deg,transparent 0 5px,rgba(227,168,92,.22) 5px 10px)}
   tr.detail td{padding:0;background:var(--panel-2);border-bottom:1px solid var(--line)}
   .detail-inner{padding:16px 18px;display:grid;grid-template-columns:1.3fr 1fr;gap:20px}
-  .detail-inner h3{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-faint);font-family:var(--mono);margin-bottom:8px}
+  .detail-inner h3{font-family:var(--sans);font-weight:500;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px}
   .detail-inner p{font-size:13px;color:var(--text-dim);line-height:1.55}
   .hours-line{font-family:var(--mono);font-size:12.5px;color:var(--text);margin-bottom:9px}
   .fbo{display:flex;flex-direction:column;gap:6px}
-  .fbo a{font-family:var(--mono);font-size:12px;color:var(--now);text-decoration:none;display:flex;gap:8px;align-items:baseline}
+  .fbo a{font-family:var(--mono);font-size:12px;color:var(--sky);text-decoration:none;display:flex;gap:8px;align-items:baseline}
   .fbo a:hover{text-decoration:underline}
-  .fbo .fbo-name{color:var(--text-dim);min-width:78px;display:inline-block}
-  .now-strip{margin-top:20px;border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:14px 16px}
-  .now-strip h2{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-faint);margin-bottom:11px}
+  .fbo .fbo-name{font-family:var(--sans);color:var(--text-dim);min-width:78px;display:inline-block}
+  .now-strip{margin-top:20px;border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:14px 16px;box-shadow:0 2px 14px rgba(0,0,0,.20)}
+  .now-strip h2{font-family:var(--sans);font-weight:500;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-faint);margin-bottom:11px}
   .pills{display:flex;flex-wrap:wrap;gap:8px}
   .pill{font-family:var(--mono);font-size:12px;padding:5px 10px;border-radius:7px;display:inline-flex;gap:7px;align-items:center}
-  .pill.p-open{background:var(--open-cell);color:#bdeede;box-shadow:inset 0 0 0 1px var(--open)}
-  .pill.p-lim{background:var(--limited-cell);color:#f2d49b;box-shadow:inset 0 0 0 1px var(--limited)}
+  .pill.p-open{background:var(--open-cell);color:#c5f0e2;box-shadow:inset 0 0 0 1px var(--open)}
+  .pill.p-lim{background:var(--limited-cell);color:#f5d8a8;box-shadow:inset 0 0 0 1px var(--limited)}
   .pill b{font-weight:600}
-  footer{margin-top:18px;color:var(--text-faint);font-size:11.5px;font-family:var(--mono);line-height:1.6}
+  footer{margin-top:18px;color:var(--text-faint);font-family:var(--sans);font-size:11.5px;line-height:1.6}
   footer .caps{color:var(--limited)}
   @media (max-width:640px){
     .detail-inner{grid-template-columns:1fr}
@@ -96,8 +104,14 @@
 <div class="wrap">
   <header>
     <div class="title-block">
-      <span class="eyebrow">London &amp; Region · BizAv Operations</span>
-      <h1>Slot &amp; Hours Board</h1>
+      <div class="brand">
+        <span class="brand-mark">
+          <span class="m-iw">IW</span><span class="m-a">A</span>
+          <svg class="m-jet" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M22 12l-9-1.6L9.2 4H7.6l2.1 6.1-4.3.4L3.6 8H2.4l1 4-1 4h1.2l1.8-2.5 4.3.4L7.6 20h1.6l3.8-6.4L22 12z"/></svg>
+        </span>
+        <span class="brand-sub">Private Aviation Advisors</span>
+      </div>
+      <h1>London Slot &amp; Hours Board</h1>
       <p>Hour-by-hour availability across the London airports. Read down a column to see what's usable right now — all times are <b>local</b>.</p>
     </div>
     <div class="clock">
@@ -190,10 +204,10 @@ const airports = [
    rules:{wd:R([[8,19]]), sat:R([[10,16]]), sun:R([[10,16]])}},
 
   {icao:"EGMC", name:"Southend",
-   hrs:{wd:"Open 0600–0130 · ext to 0230", sat:"Open 0600–0130 · ext to 0230", sun:"Open 0600–0130 · ext to 0230"},
-   note:"Open 0600–0130 daily; extensions to 0230 by coordination with the handler. 24h prior notice required due to ATC.",
+   hrs:{wd:"Open 0600–0230", sat:"Open 0600–0230", sun:"Open 0600–0230"},
+   note:"Open 0600–0230 daily. Extensions after 0230 are possible only by coordination with the handler and ATC, but unlikely to be granted (ATC staffing). Operations outside these hours are not permitted. 24h prior notice preferred (FBO/ATC staffing), though short-notice requests can often be accommodated.",
    fbos:[{n:"Southend JC",e:"ops@londonsjc.com"}],
-   rules:{wd:R([[6,23],[0,1]],[[2,2]]), sat:R([[6,23],[0,1]],[[2,2]]), sun:R([[6,23],[0,1]],[[2,2]])}},
+   rules:{wd:R([[6,23],[0,2]]), sat:R([[6,23],[0,2]]), sun:R([[6,23],[0,2]])}},
 
   {icao:"EGBB", name:"Birmingham",
    hrs:{wd:"Open H24 · night on request", sat:"Open H24 · night on request", sun:"Open H24 · night on request"},
