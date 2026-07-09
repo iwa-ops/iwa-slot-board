@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IWA · Europe Summer Parking Lookup 2026</title>
+<style>
+  :root{
+    --bg:#0A1017;
+    --panel:#101922;
+    --panel2:#0D141C;
+    --line:#1D2A38;
+    --ink:#E9EDF2;
+    --muted:#8B98A7;
+    --faint:#5A6675;
+    --brass:#C9A86A;
+    --brass-dim:#8f7847;
+    --red:#E05656;
+    --red-bg:#2A1416;
+    --amber:#E8A33D;
+    --amber-bg:#2A2112;
+    --green:#4CAF7D;
+    --green-bg:#12251C;
+    --mono:'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    --sans:'Archivo', -apple-system, 'Segoe UI', sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    min-height:100vh;
+    padding-bottom:80px;
+  }
+  .wrap{max-width:880px;margin:0 auto;padding:0 18px}
+
+  /* header */
+  header{
+    padding:26px 0 18px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:20px;
+  }
+  .brandline{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .brand{
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:.28em;
+    color:var(--brass);
+    text-transform:uppercase;
+  }
+  h1{
+    font-size:clamp(20px,4vw,27px);
+    font-weight:600;
+    letter-spacing:-.01em;
+    margin-top:8px;
+  }
+  .sub{
+    color:var(--muted);
+    font-size:13px;
+    margin-top:6px;
+    line-height:1.5;
+  }
+  .sub a{color:var(--brass);text-decoration:none;border-bottom:1px solid var(--brass-dim)}
+
+  /* search */
+  .searchbox{
+    position:relative;
+    margin:18px 0 14px;
+  }
+  .searchbox input{
+    width:100%;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:16px 18px 16px 50px;
+    color:var(--ink);
+    font-family:var(--mono);
+    font-size:16px;
+    outline:none;
+    transition:border-color .15s;
+  }
+  .searchbox input:focus{border-color:var(--brass)}
+  .searchbox input::placeholder{color:var(--faint);font-size:14px}
+  .searchbox .icon{
+    position:absolute;left:18px;top:50%;transform:translateY(-50%);
+    color:var(--brass);font-size:16px;pointer-events:none;
+  }
+  .clearbtn{
+    position:absolute;right:12px;top:50%;transform:translateY(-50%);
+    background:none;border:none;color:var(--faint);font-size:18px;cursor:pointer;
+    padding:6px;display:none;
+  }
+  .clearbtn:focus-visible{outline:2px solid var(--brass);border-radius:6px}
+
+  /* filter chips */
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+  .chip{
+    background:var(--panel);
+    border:1px solid var(--line);
+    color:var(--muted);
+    border-radius:999px;
+    padding:7px 14px;
+    font-size:12.5px;
+    font-family:var(--sans);
+    cursor:pointer;
+    transition:all .12s;
+  }
+  .chip:hover{border-color:var(--brass-dim);color:var(--ink)}
+  .chip.active{background:var(--brass);border-color:var(--brass);color:#14100a;font-weight:600}
+  .chip:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+
+  .counts{
+    font-family:var(--mono);font-size:11px;color:var(--faint);
+    margin-bottom:14px;letter-spacing:.06em;
+  }
+  .counts b{color:var(--muted);font-weight:500}
+
+  /* result rows */
+  .row{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    margin-bottom:8px;
+    overflow:hidden;
+  }
+  .rowhead{
+    display:flex;align-items:center;gap:14px;
+    padding:13px 16px;
+    cursor:pointer;
+    width:100%;background:none;border:none;color:inherit;text-align:left;
+    font-family:inherit;
+  }
+  .rowhead:focus-visible{outline:2px solid var(--brass);outline-offset:-2px;border-radius:10px}
+  .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+  .dot.red{background:var(--red);box-shadow:0 0 8px rgba(224,86,86,.5)}
+  .dot.amber{background:var(--amber);box-shadow:0 0 8px rgba(232,163,61,.4)}
+  .dot.green{background:var(--green);box-shadow:0 0 8px rgba(76,175,125,.4)}
+  .icao{
+    font-family:var(--mono);font-weight:600;font-size:15px;letter-spacing:.05em;
+    min-width:52px;
+  }
+  .aptname{font-size:14px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .aptname .ctry{color:var(--faint);font-size:12px;margin-left:6px}
+  .caret{color:var(--faint);font-size:11px;transition:transform .15s;flex-shrink:0}
+  .row.open .caret{transform:rotate(180deg)}
+
+  /* detail */
+  .detail{display:none;border-top:1px solid var(--line);background:var(--panel2)}
+  .row.open .detail{display:block}
+  .verdict{
+    display:flex;align-items:center;gap:10px;
+    padding:14px 16px;
+    font-size:13.5px;font-weight:600;
+  }
+  .verdict.red{background:var(--red-bg);color:var(--red)}
+  .verdict.amber{background:var(--amber-bg);color:var(--amber)}
+  .verdict.green{background:var(--green-bg);color:var(--green)}
+  .verdict .vlabel{
+    font-family:var(--mono);font-size:10px;letter-spacing:.18em;
+    border:1px solid currentColor;border-radius:4px;padding:3px 7px;
+    flex-shrink:0;
+  }
+  .fields{padding:6px 16px 14px}
+  .field{
+    display:grid;grid-template-columns:118px 1fr;gap:12px;
+    padding:9px 0;border-bottom:1px solid var(--line);
+    font-size:13.5px;line-height:1.55;
+  }
+  .field:last-child{border-bottom:none}
+  .flabel{
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;
+    color:var(--brass);text-transform:uppercase;padding-top:2px;
+  }
+  .fval{color:var(--ink)}
+  .fval .warn{color:var(--amber)}
+  .fval ul{list-style:none}
+  .fval li{padding-left:14px;position:relative;margin-bottom:4px}
+  .fval li:before{content:'·';position:absolute;left:2px;color:var(--brass)}
+  .backups{display:flex;gap:6px;flex-wrap:wrap}
+  .bk{
+    font-family:var(--mono);font-size:11.5px;
+    background:var(--panel);border:1px solid var(--line);
+    color:var(--muted);border-radius:6px;padding:4px 9px;
+    cursor:pointer;transition:all .12s;
+  }
+  .bk:hover{border-color:var(--brass);color:var(--brass)}
+  .bk.plain{cursor:default}
+  .bk.plain:hover{border-color:var(--line);color:var(--muted)}
+
+  .empty{
+    text-align:center;padding:50px 20px;color:var(--muted);font-size:14px;line-height:1.7;
+  }
+  .empty .big{font-family:var(--mono);font-size:26px;color:var(--faint);display:block;margin-bottom:10px}
+
+  /* golden rules */
+  .rules{
+    margin-top:28px;
+    background:var(--panel);
+    border:1px solid var(--brass-dim);
+    border-radius:10px;
+    overflow:hidden;
+  }
+  .rules summary{
+    padding:14px 16px;cursor:pointer;
+    font-family:var(--mono);font-size:12px;letter-spacing:.16em;
+    color:var(--brass);text-transform:uppercase;
+    list-style:none;display:flex;justify-content:space-between;align-items:center;
+  }
+  .rules summary::-webkit-details-marker{display:none}
+  .rules summary:after{content:'+';font-size:16px;color:var(--brass-dim)}
+  .rules[open] summary:after{content:'–'}
+  .rules .rbody{padding:0 16px 16px;font-size:13.5px;line-height:1.65;color:var(--ink)}
+  .rules .rbody p{margin-bottom:10px;padding-left:20px;position:relative}
+  .rules .rbody p b{color:var(--brass);font-weight:600}
+  .rules .rbody p:before{content:attr(data-n);position:absolute;left:0;font-family:var(--mono);color:var(--brass-dim);font-size:11px;top:2px}
+
+  footer{
+    margin-top:26px;color:var(--faint);font-size:11.5px;line-height:1.6;
+    font-family:var(--mono);
+  }
+  @media(max-width:560px){
+    .field{grid-template-columns:1fr;gap:3px}
+    .flabel{padding-top:0}
+    .aptname .ctry{display:block;margin-left:0}
+    .aptname{white-space:normal}
+  }
+  @media(prefers-reduced-motion:reduce){
+    *{transition:none!important}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brandline"><span class="brand">IWA · Charter Pod</span></div>
+    <h1>Europe Summer Parking Lookup 2026</h1>
+    <p class="sub">Type an airport, ICAO or destination — every restriction on one card. Compiled from <a href="https://ops.group/blog/maps-of-misery-europe-summer-parking-guide-2026/" target="_blank" rel="noopener">OPSGROUP, 8 Jul 2026</a>. Verify with operator/handler before confirming.</p>
+  </header>
+
+  <div class="searchbox">
+    <span class="icon">✈</span>
+    <input id="q" type="text" placeholder="Try: LEIB · Ibiza · Nice · Salerno · Mykonos…" autocomplete="off" spellcheck="false" aria-label="Search airports">
+    <button class="clearbtn" id="clear" aria-label="Clear search">✕</button>
+  </div>
+
+  <div class="chips" id="chips" role="group" aria-label="Filters"></div>
+  <div class="counts" id="counts"></div>
+  <div id="results"></div>
+
+  <details class="rules">
+    <summary>Golden rules — every Med quote</summary>
+    <div class="rbody">
+      <p data-n="01"><b>Quote reposition by default</b> at any red-rated destination Jul–Sep. Remove only once overnight parking is confirmed in writing.</p>
+      <p data-n="02"><b>Diarise booking windows in Stack.</b> Spain 14–15 days out · Naples/Salerno 15d · Faro & Brindisi 10d · Florence 15d–24hrs. Chase the operator the morning it opens.</p>
+      <p data-n="03"><b>Slot discipline.</b> Greece FLS (29 May–4 Oct): FPL vs slot mismatch over ±15 min = auto suspension. Nice: ±10 min arrival. Client schedule change → re-coordinate the slot first.</p>
+      <p data-n="04"><b>Hidden charges.</b> Mykonos / Corfu / Kos: EUR 2,000 per pax sector GA terminal fee (+VAT non-EU operators). Check operator quotes include it.</p>
+      <p data-n="05"><b>Warn clients early</b> that parking confirmation often lands only days before the flight at hotspots — set the expectation at quote stage.</p>
+      <p data-n="06"><b>Heat & fuel.</b> Nice restricts APU · Linate has denied early APU · Malaga & Madrid report fuel delays (airline priority). Plan ground power and buffer.</p>
+      <p data-n="07"><b>Non-EU operator to Portugal?</b> EORI number may be needed even for private flights or tech stops.</p>
+    </div>
+  </details>
+
+  <footer>Internal reference only · no warranty · OPSGROUP update their guide through the season — re-check before relying on any entry.</footer>
+</div>
+
+<script>
+const R = {red:{label:'AVOID OVERNIGHT', cls:'red'}, amber:{label:'PLAN CAREFULLY', cls:'amber'}, green:{label:'GOOD OPTION', cls:'green'}};
+
+const DATA = [
+// ============ SPAIN ============
+{icao:'LEIB',name:'Ibiza',ctry:'Spain',flag:'🇪🇸',rating:'red',verdict:'Hardest in Spain — overnight parking often refused outright.',
+ overnight:'Frequently denied in summer. Assume drop & go + reposition.',
+ booking:'Requests open 14–15 days before arrival via handler — no earlier, no real-time availability.',
+ restr:['Summer PPR if wingspan >18m staying >3hrs','Airport decides after full handler request — confirmation can be last-minute'],
+ notes:'Quote reposition from day one; only remove if operator confirms parking in writing.',
+ backups:['LEPA','LEMH','LEVC','LEAL']},
+{icao:'LEPA',name:'Palma de Mallorca',ctry:'Spain',flag:'🇪🇸',rating:'red',verdict:'Heavily congested all summer — long stays restricted.',
+ overnight:'Very tight. Jun–Oct: aircraft >20m length limited to 7-day max stay unless approved.',
+ booking:'Requests open 14–15 days before arrival — no earlier.',
+ restr:['Fuel delays at peak times','Confirmation often days before the flight'],
+ notes:'Workable for shorter stays with early planning; still treat overnight as unconfirmed until in writing.',
+ backups:['LEMH','LEIB','LEVC']},
+{icao:'LEMH',name:'Menorca',ctry:'Spain',flag:'🇪🇸',rating:'amber',verdict:'Easiest of the Balearics — but overnight still tough, especially weekends.',
+ overnight:'Possible with planning; weekends hardest.',
+ booking:'Requests open 14–15 days before arrival.',
+ restr:['Weekend congestion'],
+ notes:'Best Balearic bet if the client is flexible on airport.',
+ backups:['LEPA','LEIB']},
+{icao:'LEBL',name:'Barcelona El Prat',ctry:'Spain',flag:'🇪🇸',rating:'amber',verdict:'H24 and workable — but new arrival curfew for lighter aircraft.',
+ overnight:'Non-based aircraft: max 96hrs.',
+ booking:'Requests open 14–15 days before arrival.',
+ restr:['NEW: aircraft <15t MTOW cannot arrive 0900–1330LT','~20 min taxi times','Strict A-CDM compliance'],
+ notes:'Check the client\u2019s aircraft weight against the new curfew before quoting arrival times.',
+ backups:['LEGE','LERS']},
+{icao:'LEMD',name:'Madrid Barajas',ctry:'Spain',flag:'🇪🇸',rating:'amber',verdict:'Easier than 2025 — overnight restrictions currently lifted.',
+ overnight:'Currently OK (restrictions lifted — could return; re-check).',
+ booking:'Requests open 14–15 days before arrival.',
+ restr:['15–30 min taxi times','Fuel delays if no confirmed same-day departure'],
+ notes:'Confirm fuel plan for tech stops — airline traffic gets priority.',
+ backups:[]},
+{icao:'LEVC',name:'Valencia',ctry:'Spain',flag:'🇪🇸',rating:'amber',verdict:'No longer an easy reposition — still worth trying as backup.',
+ overnight:'Tighter than previous seasons.',booking:'Requests open 14–15 days before arrival.',
+ restr:[],notes:'Pair with LEAL when hunting Balearics repositioning.',backups:['LEAL']},
+{icao:'LEAL',name:'Alicante',ctry:'Spain',flag:'🇪🇸',rating:'amber',verdict:'No longer an easy reposition — still worth trying as backup.',
+ overnight:'Tighter than previous seasons.',booking:'Requests open 14–15 days before arrival.',
+ restr:[],notes:'Pair with LEVC when hunting Balearics repositioning.',backups:['LEVC']},
+{icao:'LEGE',name:'Girona',ctry:'Spain',flag:'🇪🇸',rating:'green',verdict:'Good NE-coast option.',
+ overnight:'Generally available.',booking:'Standard 14–15 day window.',restr:[],notes:'Useful Barcelona alternative.',backups:['LERS']},
+{icao:'LERS',name:'Reus',ctry:'Spain',flag:'🇪🇸',rating:'green',verdict:'Good NE-coast option.',
+ overnight:'Generally available.',booking:'Standard 14–15 day window.',restr:[],notes:'Useful Barcelona alternative.',backups:['LEGE']},
+{icao:'LEZL',name:'Seville',ctry:'Spain',flag:'🇪🇸',rating:'green',verdict:'Good southern option.',
+ overnight:'Generally available.',booking:'Standard 14–15 day window.',restr:[],notes:'',backups:['LEJR','LEMG']},
+{icao:'LEJR',name:'Jerez',ctry:'Spain',flag:'🇪🇸',rating:'green',verdict:'Good southern option.',
+ overnight:'Generally available.',booking:'Standard 14–15 day window.',restr:[],notes:'',backups:['LEZL']},
+{icao:'LEMG',name:'Malaga',ctry:'Spain',flag:'🇪🇸',rating:'green',verdict:'Available — but plan around serious fuel delays.',
+ overnight:'Generally available.',booking:'Standard 14–15 day window.',
+ restr:['⚠ ~4hr fuel delay reported — airlines prioritised'],
+ notes:'Allow generous ground time on any fuel stop.',backups:['LEGR','LEZL']},
+{icao:'LEGR',name:'Granada',ctry:'Spain',flag:'🇪🇸',rating:'green',verdict:'Good southern option.',
+ overnight:'Generally available.',booking:'Standard 14–15 day window.',restr:[],notes:'',backups:['LEMG']},
+{icao:'LEAM',name:'Almeria',ctry:'Spain',flag:'🇪🇸',rating:'green',verdict:'Good southern option.',
+ overnight:'Generally available.',booking:'Standard 14–15 day window.',restr:[],notes:'',backups:[]},
+{icao:'LEBB',name:'Bilbao',ctry:'Spain',flag:'🇪🇸',rating:'green',verdict:'Northern coast — best availability in Spain.',
+ overnight:'Good.',booking:'Standard 14–15 day window.',restr:[],notes:'Lighter summer traffic than the Med coast.',backups:['LEXJ','LEAS']},
+{icao:'LEAS',name:'Asturias',ctry:'Spain',flag:'🇪🇸',rating:'green',verdict:'Northern coast — best availability in Spain.',
+ overnight:'Good.',booking:'Standard 14–15 day window.',restr:[],notes:'',backups:['LEBB']},
+{icao:'LEST',name:'Santiago de Compostela',ctry:'Spain',flag:'🇪🇸',rating:'green',verdict:'Northern coast — best availability in Spain.',
+ overnight:'Good.',booking:'Standard 14–15 day window.',restr:[],notes:'',backups:['LEVX']},
+{icao:'LEVX',name:'Vigo',ctry:'Spain',flag:'🇪🇸',rating:'green',verdict:'Northern coast — best availability in Spain.',
+ overnight:'Good.',booking:'Standard 14–15 day window.',restr:[],notes:'',backups:['LEST']},
+{icao:'LEXJ',name:'Santander',ctry:'Spain',flag:'🇪🇸',rating:'green',verdict:'Northern coast — best availability in Spain.',
+ overnight:'Good.',booking:'Standard 14–15 day window.',restr:[],notes:'',backups:['LEBB']},
+
+// ============ GREECE ============
+{icao:'LGMK',name:'Mykonos',ctry:'Greece',flag:'🇬🇷',rating:'red',verdict:'Peak misery — plus EUR 2,000 per pax sector GA terminal fee.',
+ overnight:'Assume unavailable. Drop & go + reposition.',
+ booking:'Slots via HSCA through handler. FLS active 29 May–4 Oct: FPL >±15 min off slot = auto suspension. Slot ID in FPL Field 18.',
+ restr:['EUR 2,000 per pax-carrying sector GA terminal fee (EUR 4,000 round trip, +VAT non-EU operators)','Jul/Aug NOTAMs often stricter than Fraport PPR Handbook — check both'],
+ notes:'Verify operator quote includes the terminal fee before it reaches the client as a surprise.',
+ backups:['LGAV','LGTS','LTFE']},
+{icao:'LGSR',name:'Santorini',ctry:'Greece',flag:'🇬🇷',rating:'red',verdict:'Peak misery — hardest overnight parking in Greece.',
+ overnight:'Assume unavailable. Drop & go + reposition.',
+ booking:'Slots via HSCA. FLS ±15 min rule applies. Slot ID in FPL Field 18.',
+ restr:['Check NOTAMs — often stricter than handbook in Jul/Aug'],notes:'',backups:['LGAV','LGIR','LGTS']},
+{icao:'LGKF',name:'Kefalonia',ctry:'Greece',flag:'🇬🇷',rating:'red',verdict:'Peak misery — hardest overnight parking in Greece.',
+ overnight:'Assume unavailable.',booking:'Slots via HSCA. FLS ±15 min rule applies.',restr:[],notes:'',backups:['LGPZ','LGIO','LGTS']},
+{icao:'LGZA',name:'Zakynthos',ctry:'Greece',flag:'🇬🇷',rating:'red',verdict:'Peak misery — hardest overnight parking in Greece.',
+ overnight:'Assume unavailable.',booking:'Slots via HSCA. FLS ±15 min rule applies.',restr:[],notes:'',backups:['LGKL','LGTS']},
+{icao:'LGPZ',name:'Preveza',ctry:'Greece',flag:'🇬🇷',rating:'red',verdict:'Peak misery — hardest overnight parking in Greece.',
+ overnight:'Assume unavailable.',booking:'Slots via HSCA. FLS ±15 min rule applies.',restr:[],notes:'',backups:['LGIO','LGTS']},
+{icao:'LGKR',name:'Corfu',ctry:'Greece',flag:'🇬🇷',rating:'red',verdict:'Difficult at peak — plus EUR 2,000 per pax sector fee.',
+ overnight:'Very tight at peak.',booking:'Slots via HSCA. FLS ±15 min rule applies.',
+ restr:['EUR 2,000 per pax-carrying sector GA terminal fee (+VAT non-EU operators)'],
+ notes:'Check quote includes the fee.',backups:['LGIO','LGTS']},
+{icao:'LGKO',name:'Kos',ctry:'Greece',flag:'🇬🇷',rating:'amber',verdict:'May work — carries the EUR 2,000 per pax sector fee.',
+ overnight:'Possible with planning.',booking:'Slots via HSCA. FLS ±15 min rule applies.',
+ restr:['EUR 2,000 per pax-carrying sector GA terminal fee (+VAT non-EU operators)'],
+ notes:'',backups:['LGRP','LTFE','LTBJ']},
+{icao:'LGAV',name:'Athens',ctry:'Greece',flag:'🇬🇷',rating:'amber',verdict:'No longer an easy fallback — PPR now controlled.',
+ overnight:'Not guaranteed.',
+ booking:'Stays ≤90 min: no PPR needed. Longer: PPR required, processed only within 24hrs of the flight.',
+ restr:['PPR uncertainty until 24hrs out'],
+ notes:'Don\u2019t promise clients an Athens reposition until PPR confirmed.',backups:['LGTS','LGKL']},
+{icao:'LGSA',name:'Chania',ctry:'Greece',flag:'🇬🇷',rating:'amber',verdict:'May work — check case by case.',
+ overnight:'Possible with planning.',booking:'Slots via HSCA where applicable.',restr:[],notes:'',backups:['LGIR']},
+{icao:'LGIR',name:'Heraklion',ctry:'Greece',flag:'🇬🇷',rating:'amber',verdict:'May work — check case by case.',
+ overnight:'Possible with planning.',booking:'Slots via HSCA where applicable.',restr:[],notes:'',backups:['LGSA']},
+{icao:'LGKL',name:'Kalamata',ctry:'Greece',flag:'🇬🇷',rating:'amber',verdict:'May work — one of the better mainland-adjacent options.',
+ overnight:'Possible with planning.',booking:'Check current PPR/slot status.',restr:[],notes:'',backups:['LGAV','LGTS']},
+{icao:'LGRP',name:'Rhodes',ctry:'Greece',flag:'🇬🇷',rating:'amber',verdict:'May work — check case by case.',
+ overnight:'Possible with planning.',booking:'Slots via HSCA where applicable.',restr:[],notes:'',backups:['LTFE','LTBJ']},
+{icao:'LGMT',name:'Mytilene',ctry:'Greece',flag:'🇬🇷',rating:'amber',verdict:'May work — check case by case.',
+ overnight:'Possible with planning.',booking:'Check current PPR/slot status.',restr:[],notes:'',backups:['LTBJ']},
+{icao:'LGSK',name:'Skiathos',ctry:'Greece',flag:'🇬🇷',rating:'amber',verdict:'May work — check case by case.',
+ overnight:'Possible with planning.',booking:'Slots via HSCA where applicable.',restr:[],notes:'',backups:['LGTS','LGBL']},
+{icao:'LGSM',name:'Samos',ctry:'Greece',flag:'🇬🇷',rating:'amber',verdict:'Backup only.',
+ overnight:'Possible.',booking:'Check current PPR/slot status.',restr:[],notes:'',backups:['LTBJ']},
+{icao:'LGTS',name:'Thessaloniki',ctry:'Greece',flag:'🇬🇷',rating:'green',verdict:'Best mainland reposition in Greece.',
+ overnight:'Good.',booking:'Standard.',restr:[],notes:'',backups:['LGKV']},
+{icao:'LGIO',name:'Ioannina',ctry:'Greece',flag:'🇬🇷',rating:'green',verdict:'Good mainland option — handy for the Ionian islands.',
+ overnight:'Good.',booking:'Standard.',restr:[],notes:'',backups:['LGTS']},
+{icao:'LGKV',name:'Kavala',ctry:'Greece',flag:'🇬🇷',rating:'green',verdict:'Good mainland option.',
+ overnight:'Good.',booking:'Standard.',restr:[],notes:'',backups:['LGTS']},
+{icao:'LGBL',name:'Almiros (Nea Anchialos)',ctry:'Greece',flag:'🇬🇷',rating:'green',verdict:'Obscure but useful — positive member reports.',
+ overnight:'Good.',booking:'Standard.',restr:[],notes:'Handy for Skiathos/Sporades repositioning.',backups:['LGTS']},
+{icao:'LCPH',name:'Paphos',ctry:'Cyprus',flag:'🇨🇾',rating:'green',verdict:'Worth trying for eastern Med repositioning.',
+ overnight:'Good.',booking:'Standard.',restr:[],notes:'',backups:['LCLK']},
+{icao:'LCLK',name:'Larnaca',ctry:'Cyprus',flag:'🇨🇾',rating:'green',verdict:'Worth trying for eastern Med repositioning.',
+ overnight:'Good.',booking:'Standard.',restr:[],notes:'',backups:['LCPH']},
+{icao:'LTFE',name:'Bodrum',ctry:'Türkiye',flag:'🇹🇷',rating:'green',verdict:'Recommended for 3–5 day stays — strong Greek islands reposition.',
+ overnight:'Good for 3–5 days.',booking:'Standard Türkiye procedures via handler.',restr:[],notes:'',backups:['LTBJ']},
+{icao:'LTBJ',name:'Izmir',ctry:'Türkiye',flag:'🇹🇷',rating:'green',verdict:'Recommended for long parking — 10–15 days.',
+ overnight:'Good, including long-term.',booking:'Standard Türkiye procedures via handler.',restr:[],notes:'',backups:['LTFE']},
+
+// ============ ITALY ============
+{icao:'LIPZ',name:'Venice Marco Polo',ctry:'Italy',flag:'🇮🇹',rating:'red',verdict:'Max 24hr ground time all season.',
+ overnight:'One night absolute max.',
+ booking:'PPR mandatory mid-May – late Oct.',
+ restr:['Max 24hr ground time'],
+ notes:'Longer stays → reposition. Italy-wide: disinsection certificate may be needed if aircraft operated in mosquito-risk countries within 28 days — confirm with FBO.',
+ backups:['LIPH','LIPX','LIPQ']},
+{icao:'LIPH',name:'Treviso',ctry:'Italy',flag:'🇮🇹',rating:'amber',verdict:'Historically easy — now denying parking even for short pax pickups.',
+ overnight:'No longer reliable.',booking:'Check with handler.',restr:[],
+ notes:'Don\u2019t assume the old flexibility.',backups:['LIPX','LIPQ']},
+{icao:'LIPX',name:'Verona',ctry:'Italy',flag:'🇮🇹',rating:'amber',verdict:'Usually one night max — Wednesdays and Saturdays hardest.',
+ overnight:'Typically 1 night max.',booking:'PPR required.',restr:['Wed & Sat most congested'],notes:'',backups:['LIPO','LIME']},
+{icao:'LIML',name:'Milan Linate',ctry:'Italy',flag:'🇮🇹',rating:'green',verdict:'Preferred for downtown Milan — no major seasonal restrictions.',
+ overnight:'Generally available.',booking:'Standard.',
+ restr:['⚠ APU use restricted in heat — pre-agree ground power with handler','Parking charges remain well above pre-2025 levels'],
+ notes:'Relevant for clients who board early in hot weather.',backups:['LIMC','LIMF']},
+{icao:'LIMC',name:'Milan Malpensa',ctry:'Italy',flag:'🇮🇹',rating:'green',verdict:'BizAv-friendly, suits larger aircraft — watch September.',
+ overnight:'Good; longer stays may mean remote parking.',booking:'Standard.',
+ restr:['Fuel delays at peak','High parking charges','⚠ Sept squeeze: Italian GP + Fashion Week'],
+ notes:'',backups:['LIML','LIMF','LIME']},
+{icao:'LIMF',name:'Turin',ctry:'Italy',flag:'🇮🇹',rating:'green',verdict:'Reliable Milan-area alternative.',
+ overnight:'Good.',booking:'PPR required.',restr:[],notes:'',backups:['LIMC']},
+{icao:'LIPO',name:'Brescia',ctry:'Italy',flag:'🇮🇹',rating:'green',verdict:'FBO-recommended reposition.',
+ overnight:'Good.',booking:'Standard.',restr:[],notes:'',backups:['LIME']},
+{icao:'LIPQ',name:'Trieste',ctry:'Italy',flag:'🇮🇹',rating:'green',verdict:'FBO-recommended reposition for the northeast.',
+ overnight:'Good.',booking:'Standard.',restr:[],notes:'',backups:['LIPZ']},
+{icao:'LIME',name:'Bergamo',ctry:'Italy',flag:'🇮🇹',rating:'green',verdict:'FBO-recommended reposition.',
+ overnight:'Good.',booking:'PPR required.',restr:[],notes:'',backups:['LIPO','LIMC']},
+{icao:'LIPY',name:'Ancona',ctry:'Italy',flag:'🇮🇹',rating:'green',verdict:'Useful Adriatic option — new PPR procedure this summer.',
+ overnight:'Good.',booking:'PPR required (new procedure — check current process).',restr:[],notes:'',backups:['LIPR']},
+{icao:'LIMJ',name:'Genoa',ctry:'Italy',flag:'🇮🇹',rating:'green',verdict:'Good member reports for longer parking — availability changes weekly.',
+ overnight:'Often available, even longer stays.',booking:'Check weekly — availability moves.',restr:[],notes:'Good Riviera-adjacent reposition.',backups:['LIMF','LFLL']},
+{icao:'LIRP',name:'Pisa',ctry:'Italy',flag:'🇮🇹',rating:'amber',verdict:'Usually fine — but PPRs limited by runway capacity at peak.',
+ overnight:'Usually OK.',booking:'PPR — limited by hourly runway capacity; expect delays at peak.',restr:[],notes:'',backups:['LIRQ','LIRS']},
+{icao:'LIRQ',name:'Florence',ctry:'Italy',flag:'🇮🇹',rating:'red',verdict:'Tight PPR window and 24hr parking cap.',
+ overnight:'Max 24hrs.',booking:'PPR accepted only 15 days – 24hrs before arrival.',
+ restr:['Max 24hr parking'],notes:'For longer Tuscany stays use Grosseto.',backups:['LIRS','LIRP']},
+{icao:'LIPE',name:'Bologna',ctry:'Italy',flag:'🇮🇹',rating:'amber',verdict:'OK with PPR.',
+ overnight:'Generally OK.',booking:'PPR required.',restr:[],notes:'',backups:['LIPR','LIMP']},
+{icao:'LIMZ',name:'Cuneo',ctry:'Italy',flag:'🇮🇹',rating:'green',verdict:'Lighter demand — useful fallback.',
+ overnight:'Good.',booking:'Standard.',restr:[],notes:'',backups:['LIMF']},
+{icao:'LIMP',name:'Parma',ctry:'Italy',flag:'🇮🇹',rating:'green',verdict:'Lighter demand — useful fallback.',
+ overnight:'Good.',booking:'Standard.',restr:[],notes:'',backups:['LIPE']},
+{icao:'LIPR',name:'Rimini',ctry:'Italy',flag:'🇮🇹',rating:'green',verdict:'Lighter demand — useful Adriatic fallback.',
+ overnight:'Good.',booking:'Standard.',restr:[],notes:'',backups:['LIPY']},
+{icao:'LIRA',name:'Rome Ciampino',ctry:'Italy',flag:'🇮🇹',rating:'amber',verdict:'Main Rome BizAv airport — wingspan cap on ferry-in aircraft.',
+ overnight:'Possible; watch the ferry rule.',
+ booking:'Standard PPR.',
+ restr:['1 May–30 Sep: ferry-in aircraft with wingspan >21.4m limited to 24hrs'],
+ notes:'',backups:['LIRS','LIRZ','LIRF']},
+{icao:'LIRF',name:'Rome Fiumicino',ctry:'Italy',flag:'🇮🇹',rating:'red',verdict:'Poor fallback — short stops only, no ferry PPRs.',
+ overnight:'No — max ~12hr stop.',booking:'Only when Ciampino unavailable.',
+ restr:['No ferry-in/out PPRs','Max ~12hr ground time'],notes:'',backups:['LIRA','LIRS']},
+{icao:'LIRS',name:'Grosseto',ctry:'Italy',flag:'🇮🇹',rating:'green',verdict:'Best Tuscany/Rome-area parking — overnight and long-term fine.',
+ overnight:'Yes, including long-term. No ground limit.',
+ booking:'PPR with 24hrs notice.',
+ restr:['⚠ Daylight operations only'],
+ notes:'Plan arrivals/departures inside daylight hours.',backups:['LIRP','LIRQ']},
+{icao:'LIRZ',name:'Perugia',ctry:'Italy',flag:'🇮🇹',rating:'green',verdict:'Handy central-Italy alternative.',
+ overnight:'Good.',booking:'PPR required.',restr:[],notes:'',backups:['LIRS']},
+{icao:'LIBP',name:'Pescara',ctry:'Italy',flag:'🇮🇹',rating:'green',verdict:'No notable restrictions.',
+ overnight:'Good.',booking:'Standard.',restr:[],notes:'',backups:['LIPY']},
+{icao:'LIRN',name:'Naples',ctry:'Italy',flag:'🇮🇹',rating:'red',verdict:'3-hour max ground time, no overnight — plan around it.',
+ overnight:'No. Max 3hrs ground time.',
+ booking:'PPR opens 15 days before arrival.',
+ restr:['Ops 0600–2300LT, no extensions','Max 3hr ground time'],
+ notes:'Amalfi trips: drop & go here, park elsewhere.',backups:['LIRI','LIBF','LICA']},
+{icao:'LIRI',name:'Salerno',ctry:'Italy',flag:'🇮🇹',rating:'amber',verdict:'Up to 48hrs possible — but handling and customs currently slow.',
+ overnight:'Up to 48hrs subject to availability.',
+ booking:'PPR opens 15 days before arrival.',
+ restr:['⚠ Member report: slow handling, very long customs queues','Old FBO closed — temporary terminal shared with airline passengers'],
+ notes:'Always hold a pre-agreed backup airport. Brief clients on possible arrival/departure delays.',
+ backups:['LIRN','LIBF','LICA']},
+{icao:'LICA',name:'Lamezia Terme',ctry:'Italy',flag:'🇮🇹',rating:'green',verdict:'Calabria workhorse — 4–5 day stays typical.',
+ overnight:'Yes, 4–5 day stays typical.',booking:'PPR required.',
+ restr:['BizAv mostly daylight-only despite H24 airport'],notes:'',backups:['LIBC','LICR']},
+{icao:'LIBF',name:'Foggia',ctry:'Italy',flag:'🇮🇹',rating:'green',verdict:'FBO-recommended fallback for the south.',
+ overnight:'Good.',booking:'Standard.',restr:[],notes:'',backups:['LIBD']},
+{icao:'LIBD',name:'Bari',ctry:'Italy',flag:'🇮🇹',rating:'amber',verdict:'Mostly 24hr max — a few stands allow up to 5 days.',
+ overnight:'Mostly 24hrs; limited longer-stay stands.',booking:'PPR required.',restr:[],notes:'',backups:['LIBF','LIBG']},
+{icao:'LIBR',name:'Brindisi',ctry:'Italy',flag:'🇮🇹',rating:'red',verdict:'Max ~3hrs ground time — short window PPR.',
+ overnight:'No — max ~3hrs.',booking:'PPR opens only 10 days before arrival.',restr:['Max ~3hr ground time'],
+ notes:'Puglia stays → park at Taranto or Foggia.',backups:['LIBG','LIBF','LIBD']},
+{icao:'LIBG',name:'Taranto Grottaglie',ctry:'Italy',flag:'🇮🇹',rating:'green',verdict:'Overnight fine, no PPR — but strict daytime hours.',
+ overnight:'Yes, no limits.',booking:'No PPR needed.',
+ restr:['Ops 0800–2000LT only (last arrival 1920, first departure 0830)'],
+ notes:'Great Puglia parking if the schedule fits the hours.',backups:['LIBD','LIBF']},
+{icao:'LIBC',name:'Crotone',ctry:'Italy',flag:'🇮🇹',rating:'green',verdict:'Quiet — no notable summer restrictions.',
+ overnight:'Good.',booking:'Standard.',restr:[],
+ notes:'Matches our own recent experience on the Angelo file.',backups:['LICA','LICR']},
+{icao:'LICR',name:'Reggio Calabria',ctry:'Italy',flag:'🇮🇹',rating:'green',verdict:'Quiet — crew qualification required.',
+ overnight:'Good.',booking:'Standard.',
+ restr:['Prior crew qualification required'],notes:'Confirm operator crew are qualified before offering.',backups:['LICA','LIBC']},
+{icao:'LIEE',name:'Cagliari',ctry:'Italy',flag:'🇮🇹',rating:'amber',verdict:'Longer stays not always possible at peak.',
+ overnight:'Short stays OK; longer uncertain at peak.',booking:'PPR required.',restr:[],notes:'',backups:['LIEO','LIEA']},
+{icao:'LIEO',name:'Olbia',ctry:'Italy',flag:'🇮🇹',rating:'green',verdict:'Preferred Sardinia reposition.',
+ overnight:'Good.',booking:'PPR required.',restr:[],notes:'Costa Smeralda workhorse.',backups:['LIEA','LIEE']},
+{icao:'LIEA',name:'Alghero',ctry:'Italy',flag:'🇮🇹',rating:'green',verdict:'Sardinia backup option.',
+ overnight:'Good.',booking:'Standard.',restr:[],notes:'',backups:['LIEO']},
+{icao:'LICC',name:'Catania',ctry:'Italy',flag:'🇮🇹',rating:'green',verdict:'Best on Sicily — H24, no published ground limit.',
+ overnight:'Good, no published limit.',booking:'PPR required.',restr:[],notes:'',backups:['LICJ','LICB']},
+{icao:'LICJ',name:'Palermo',ctry:'Italy',flag:'🇮🇹',rating:'amber',verdict:'Typically 3–4 day parking — very tight late July.',
+ overnight:'Typically 3–4 days.',booking:'PPR required.',
+ restr:['⚠ Very tight during the Google event end of July'],notes:'',backups:['LICC','LICT']},
+{icao:'LICT',name:'Trapani',ctry:'Italy',flag:'🇮🇹',rating:'green',verdict:'Sicily reposition — military field, authorised civil only.',
+ overnight:'Good if authorised.',booking:'Civil ops must be authorised — via handler.',restr:['Military airport'],notes:'',backups:['LICJ','LICC']},
+{icao:'LICB',name:'Comiso',ctry:'Italy',flag:'🇮🇹',rating:'green',verdict:'Sicily reposition with limited hours.',
+ overnight:'Good.',booking:'Standard.',restr:['Ops 0600–2200LT'],notes:'',backups:['LICC']},
+
+// ============ FRANCE ============
+{icao:'LFMN',name:'Nice Côte d\u2019Azur',ctry:'France',flag:'🇫🇷',rating:'red',verdict:'Fully slot-controlled — a schedule change can lose slot AND parking.',
+ overnight:'Possible but fragile — tied to your slot.',
+ booking:'Slots mandatory: arrival ±10 min, departure −10/+15 min. Slot ID in FPL Field 18. Parking/handling details via MyHandling 24–72hrs ahead.',
+ restr:['Fuel delays common — airline traffic prioritised','APU restricted pre-departure — plan ground power in heat','Approval may come only days before the flight'],
+ notes:'Treat any client schedule change as high-risk. Build buffer into every LFMN itinerary.',
+ backups:['LFMD','LFLL','LIMJ']},
+{icao:'LFMD',name:'Cannes Mandelieu',ctry:'France',flag:'🇫🇷',rating:'amber',verdict:'Weight-capped and coordinated all summer.',
+ overnight:'Possible with planning.',
+ booking:'Coordinated 11 May–14 Sep; slots for IFR/Y/Z flights.',
+ restr:['Jets >35t / turboprops >22t not accepted','Only accepted as alternate for La Môle (LFTZ) flights'],
+ notes:'Check the aircraft weight before quoting.',backups:['LFMN','LFTH']},
+{icao:'LFML',name:'Marseille',ctry:'France',flag:'🇫🇷',rating:'amber',verdict:'H24 but summer BizAv needs airport approval — long stays scarce.',
+ overnight:'Short turns fine; only 6 stands for >72hr stays — move fast.',
+ booking:'1 Jun–31 Aug: all BizAv requires airport admin approval via handler.',
+ restr:[],notes:'',backups:['LFMV','LFTW','LFMT']},
+{icao:'LFTH',name:'Toulon Hyères',ctry:'France',flag:'🇫🇷',rating:'amber',verdict:'Useful but limited hours — joint civil-military.',
+ overnight:'Possible.',booking:'PPR required.',
+ restr:['Limited operating hours','⚠ Cannot be used as an alternate without PPR'],
+ notes:'',backups:['LFML','LFMQ']},
+{icao:'LFTZ',name:'La Môle Saint-Tropez',ctry:'France',flag:'🇫🇷',rating:'amber',verdict:'Short runway, restricted use — approved operators and crews only.',
+ overnight:'Limited.',booking:'Approved operators/crews only.',
+ restr:['Short runway','LFMD is the designated alternate'],
+ notes:'Confirm operator approval status before offering.',backups:['LFMD','LFTH']},
+{icao:'LFMT',name:'Montpellier',ctry:'France',flag:'🇫🇷',rating:'green',verdict:'Good availability — but manual bag checks slow departures.',
+ overnight:'Good.',booking:'PPR for non-based BizAv.',
+ restr:['⚠ No X-ray at VIP terminal — manual baggage checks add departure time'],
+ notes:'Brief crews/clients on the extra departure time.',backups:['LFTW','LFMP']},
+{icao:'LFMV',name:'Avignon',ctry:'France',flag:'🇫🇷',rating:'green',verdict:'Good availability, shorter operating hours.',
+ overnight:'Good.',booking:'Standard.',restr:['Limited hours'],notes:'',backups:['LFTW','LFML']},
+{icao:'LFMP',name:'Perpignan',ctry:'France',flag:'🇫🇷',rating:'green',verdict:'Good availability, shorter operating hours.',
+ overnight:'Good.',booking:'PPR required.',restr:['Limited hours'],notes:'',backups:['LFMT']},
+{icao:'LFTW',name:'Nîmes',ctry:'France',flag:'🇫🇷',rating:'green',verdict:'Good availability, shorter operating hours.',
+ overnight:'Good.',booking:'Standard.',restr:['Limited hours'],notes:'',backups:['LFMV','LFMT']},
+{icao:'LFMQ',name:'Le Castellet',ctry:'France',flag:'🇫🇷',rating:'amber',verdict:'Schengen-only with slots — never your only alternate.',
+ overnight:'Possible.',booking:'Slots required.',
+ restr:['Schengen flights only','⚠ No routine TAF/METAR — never file as sole alternate'],
+ notes:'',backups:['LFTH','LFML']},
+{icao:'LFLL',name:'Lyon Saint-Exupéry',ctry:'France',flag:'🇫🇷',rating:'green',verdict:'Parking usually available even at peak — takes large jets.',
+ overnight:'Good, including larger aircraft.',booking:'Standard, details via MyHandling.',restr:[],
+ notes:'Strong Riviera reposition.',backups:['LFLY','LFLS']},
+{icao:'LFLY',name:'Lyon Bron',ctry:'France',flag:'🇫🇷',rating:'green',verdict:'Good inland option.',
+ overnight:'Good.',booking:'Standard.',restr:[],notes:'',backups:['LFLL']},
+{icao:'LFLS',name:'Grenoble',ctry:'France',flag:'🇫🇷',rating:'green',verdict:'Good inland option — limited hours.',
+ overnight:'Good.',booking:'Standard.',restr:['Limited operating hours'],notes:'',backups:['LFLL','LFLY']},
+{icao:'LFKF',name:'Figari (Corsica)',ctry:'France',flag:'🇫🇷',rating:'red',verdict:'Quick turns only — no long-term parking.',
+ overnight:'No.',booking:'Standard Corsica procedures.',restr:['Quick turns only'],notes:'',backups:['LFKJ','LFKB']},
+{icao:'LFKB',name:'Bastia (Corsica)',ctry:'France',flag:'🇫🇷',rating:'amber',verdict:'Some flexibility — limited at peak.',
+ overnight:'Limited at peak.',booking:'Standard.',restr:[],notes:'',backups:['LFKJ']},
+{icao:'LFKJ',name:'Ajaccio (Corsica)',ctry:'France',flag:'🇫🇷',rating:'green',verdict:'Best on the island — slots + PPR but availability generally good.',
+ overnight:'Generally good.',booking:'Slots + PPR required.',restr:[],notes:'',backups:['LFKB']},
+
+// ============ PORTUGAL ============
+{icao:'LPPT',name:'Lisbon',ctry:'Portugal',flag:'🇵🇹',rating:'red',verdict:'Ad-hoc slots mean short turns only.',
+ overnight:'Effectively no for ad-hoc — turns capped by aircraft code.',
+ booking:'Ad-hoc slots: 45 min (Code A/B) · 60 min (Code C/D) · 90 min (Code E).',
+ restr:['⚠ Non-EU operators may need an EORI number even for private flights/tech stops'],
+ notes:'Use Cascais for anything beyond a quick turn.',backups:['LPCS','LPBJ']},
+{icao:'LPCS',name:'Cascais',ctry:'Portugal',flag:'🇵🇹',rating:'green',verdict:'The Lisbon workaround — overnight fine, no slots.',
+ overnight:'Yes.',
+ booking:'No slots. PPR only for non-Schengen flights.',
+ restr:['Hours: 0800LT–sunset (extension to 2259 possible, fees apply)'],
+ notes:'Plan schedules inside the operating hours or budget the extension fee.',backups:['LPBJ','LPPT']},
+{icao:'LPFR',name:'Faro',ctry:'Portugal',flag:'🇵🇹',rating:'red',verdict:'Mandatory slots on a 10-day window — overnight tight.',
+ overnight:'Tight.',
+ booking:'Slots mandatory; applications open only 10 days before arrival.',
+ restr:['Passport control delays common 0900–1300LT until VIP terminal opens','Non-EU operators: check EORI requirement'],
+ notes:'Diarise the 10-day window in Stack for every confirmed Faro booking.',backups:['LPBJ','LEZL']},
+{icao:'LPBJ',name:'Beja',ctry:'Portugal',flag:'🇵🇹',rating:'green',verdict:'Easiest in Portugal — overnight fine, no slots.',
+ overnight:'Yes, freely.',booking:'No slots.',restr:[],notes:'Strong reposition for Lisbon and Algarve trips.',backups:['LPCS']},
+{icao:'LPPR',name:'Porto',ctry:'Portugal',flag:'🇵🇹',rating:'amber',verdict:'Workable with mandatory slots.',
+ overnight:'Workable.',booking:'Slots mandatory; PPR only for AOC international flights.',restr:[],notes:'',backups:['LPBJ']},
+
+// ============ CROATIA ============
+{icao:'LDSP',name:'Split',ctry:'Croatia',flag:'🇭🇷',rating:'red',verdict:'Hardest in Croatia — usually no overnight, ~60 min turns.',
+ overnight:'Usually no in summer.',
+ booking:'Slots open 14 days before arrival.',
+ restr:['~60 min turnarounds','⚠ Not available as an alternate for much of July'],
+ notes:'Park at Zadar or Zagreb and reposition.',backups:['LDZD','LDZA','LDDU']},
+{icao:'LDSB',name:'Brač',ctry:'Croatia',flag:'🇭🇷',rating:'amber',verdict:'Not the easy Split fallback it once was.',
+ overnight:'Uncertain.',booking:'PPR mandatory.',
+ restr:['Variable operating hours — check NOTAMs'],notes:'',backups:['LDZD','LDDU']},
+{icao:'LDDU',name:'Dubrovnik',ctry:'Croatia',flag:'🇭🇷',rating:'amber',verdict:'Popular reposition — overnight subject to approval.',
+ overnight:'Possible subject to approval.',
+ booking:'No routine slot/PPR; out-of-hours PPR applies.',restr:[],notes:'',backups:['LDZA','LYTV']},
+{icao:'LDZD',name:'Zadar',ctry:'Croatia',flag:'🇭🇷',rating:'green',verdict:'Preferred coastal reposition — 10-day parking reported fine.',
+ overnight:'Good, including long stays (10-day member report).',
+ booking:'PPR currently required.',
+ restr:['Customs & fuel prioritise airlines — allow extra ground time'],
+ notes:'',backups:['LDZA','LDPL']},
+{icao:'LDPL',name:'Pula',ctry:'Croatia',flag:'🇭🇷',rating:'green',verdict:'Workable — smooth overnight reported, limited catering.',
+ overnight:'Good.',booking:'PPR due congestion.',
+ restr:['Limited catering — order well ahead'],notes:'',backups:['LDRI','LDZD']},
+{icao:'LDRI',name:'Rijeka',ctry:'Croatia',flag:'🇭🇷',rating:'green',verdict:'No routine slot or PPR.',
+ overnight:'Good.',booking:'None routine.',restr:[],notes:'',backups:['LDPL','LDZA']},
+{icao:'LDZA',name:'Zagreb',ctry:'Croatia',flag:'🇭🇷',rating:'green',verdict:'Strongest option in Croatia — overnight generally fine.',
+ overnight:'Good.',booking:'No slots or PPR.',restr:[],notes:'Best long-stay parking for Croatia trips.',backups:['LJLJ','LYBE']},
+{icao:'LDOS',name:'Osijek',ctry:'Croatia',flag:'🇭🇷',rating:'green',verdict:'May work — variable hours.',
+ overnight:'Possible.',booking:'Check NOTAMs for hours.',restr:['Variable operating hours'],notes:'',backups:['LDZA']},
+{icao:'LYTV',name:'Tivat',ctry:'Montenegro',flag:'🇲🇪',rating:'green',verdict:'Regional fallback for the Adriatic.',
+ overnight:'Check case by case.',booking:'Standard.',restr:[],notes:'',backups:['LYPG']},
+{icao:'LYPG',name:'Podgorica',ctry:'Montenegro',flag:'🇲🇪',rating:'green',verdict:'Regional fallback for the Adriatic.',
+ overnight:'Check case by case.',booking:'Standard.',restr:[],notes:'',backups:['LYTV']},
+{icao:'LYBE',name:'Belgrade',ctry:'Serbia',flag:'🇷🇸',rating:'green',verdict:'Regional fallback.',
+ overnight:'Good.',booking:'Standard.',restr:[],notes:'',backups:[]},
+{icao:'LQSA',name:'Sarajevo',ctry:'Bosnia & Herzegovina',flag:'🇧🇦',rating:'green',verdict:'Regional fallback.',
+ overnight:'Good.',booking:'Standard.',restr:[],notes:'',backups:[]},
+{icao:'LJLJ',name:'Ljubljana',ctry:'Slovenia',flag:'🇸🇮',rating:'green',verdict:'Regional fallback — handy for Croatia/N Italy.',
+ overnight:'Good.',booking:'Standard.',restr:[],notes:'',backups:['LDZA']}
+];
+
+const COUNTRIES = ['All','Spain','Greece','Italy','France','Portugal','Croatia','Backups'];
+const BACKUP_CTRY = ['Cyprus','Türkiye','Montenegro','Serbia','Bosnia & Herzegovina','Slovenia'];
+let filter = 'All';
+let query = '';
+let openIcao = null;
+
+const $q = document.getElementById('q');
+const $clear = document.getElementById('clear');
+const $chips = document.getElementById('chips');
+const $results = document.getElementById('results');
+const $counts = document.getElementById('counts');
+
+function norm(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+
+function matches(a){
+  if(filter==='Backups' && !BACKUP_CTRY.includes(a.ctry)) return false;
+  if(filter!=='All' && filter!=='Backups' && a.ctry!==filter) return false;
+  if(!query) return true;
+  const q = norm(query);
+  return norm(a.icao).startsWith(q) || norm(a.name).includes(q) || norm(a.ctry).includes(q);
+}
+
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function detailHTML(a){
+  const r = R[a.rating];
+  let f = '';
+  f += `<div class="field"><div class="flabel">Overnight</div><div class="fval">${esc(a.overnight)}</div></div>`;
+  f += `<div class="field"><div class="flabel">PPR / Slots</div><div class="fval">${esc(a.booking)}</div></div>`;
+  if(a.restr.length){
+    f += `<div class="field"><div class="flabel">Restrictions</div><div class="fval"><ul>${a.restr.map(x=>`<li>${x.startsWith('⚠')?'<span class="warn">'+esc(x)+'</span>':esc(x)}</li>`).join('')}</ul></div></div>`;
+  }
+  if(a.notes){
+    f += `<div class="field"><div class="flabel">Pod notes</div><div class="fval">${esc(a.notes)}</div></div>`;
+  }
+  if(a.backups.length){
+    const bks = a.backups.map(b=>{
+      const t = DATA.find(d=>d.icao===b);
+      return t ? `<button class="bk" data-goto="${b}">${b} · ${esc(t.name)}</button>` : `<span class="bk plain">${esc(b)}</span>`;
+    }).join('');
+    f += `<div class="field"><div class="flabel">Backups</div><div class="fval"><div class="backups">${bks}</div></div></div>`;
+  }
+  return `<div class="detail">
+    <div class="verdict ${r.cls}"><span class="vlabel">${r.label}</span><span>${esc(a.verdict)}</span></div>
+    <div class="fields">${f}</div>
+  </div>`;
+}
+
+function render(){
+  const list = DATA.filter(matches);
+  // sort: red first when searching a specific place? Keep source order (country grouping) but if query, exact ICAO match first
+  if(query){
+    const q = norm(query);
+    list.sort((x,y)=>{
+      const xe = norm(x.icao)===q?0:1, ye = norm(y.icao)===q?0:1;
+      return xe-ye;
+    });
+  }
+  $counts.innerHTML = `<b>${list.length}</b> AIRPORT${list.length===1?'':'S'} · <b>${list.filter(a=>a.rating==='red').length}</b> RED · <b>${list.filter(a=>a.rating==='amber').length}</b> AMBER · <b>${list.filter(a=>a.rating==='green').length}</b> GREEN`;
+  if(!list.length){
+    $results.innerHTML = `<div class="empty"><span class="big">—</span>No match for “${esc(query)}”.<br>Try the ICAO code, city name, or clear the country filter.</div>`;
+    return;
+  }
+  // auto-open if single result or exact icao match
+  let autoOpen = openIcao;
+  if(list.length===1) autoOpen = list[0].icao;
+  else if(query && norm(list[0].icao)===norm(query)) autoOpen = list[0].icao;
+
+  $results.innerHTML = list.map(a=>`
+    <div class="row ${a.icao===autoOpen?'open':''}" id="row-${a.icao}">
+      <button class="rowhead" data-icao="${a.icao}" aria-expanded="${a.icao===autoOpen}">
+        <span class="dot ${a.rating}"></span>
+        <span class="icao">${a.icao}</span>
+        <span class="aptname">${a.flag} ${esc(a.name)}<span class="ctry">${esc(a.ctry)}</span></span>
+        <span class="caret">▼</span>
+      </button>
+      ${detailHTML(a)}
+    </div>`).join('');
+}
+
+function renderChips(){
+  $chips.innerHTML = COUNTRIES.map(c=>`<button class="chip ${filter===c?'active':''}" data-f="${c}">${c==='Backups'?'CY/TR/Balkans':c}</button>`).join('');
+}
+
+$q.addEventListener('input',()=>{
+  query = $q.value.trim();
+  $clear.style.display = query?'block':'none';
+  openIcao = null;
+  render();
+});
+$clear.addEventListener('click',()=>{
+  $q.value=''; query=''; openIcao=null; $clear.style.display='none'; render(); $q.focus();
+});
+$chips.addEventListener('click',e=>{
+  const b = e.target.closest('.chip'); if(!b) return;
+  filter = b.dataset.f; openIcao=null; renderChips(); render();
+});
+$results.addEventListener('click',e=>{
+  const go = e.target.closest('[data-goto]');
+  if(go){
+    const t = go.dataset.goto;
+    filter='All'; query=''; $q.value=''; $clear.style.display='none';
+    openIcao = t;
+    renderChips(); render();
+    const el = document.getElementById('row-'+t);
+    if(el) el.scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
+  const h = e.target.closest('.rowhead');
+  if(h){
+    const row = h.parentElement;
+    const was = row.classList.contains('open');
+    document.querySelectorAll('.row.open').forEach(r=>r.classList.remove('open'));
+    if(!was){ row.classList.add('open'); openIcao=h.dataset.icao; }
+    else openIcao=null;
+  }
+});
+
+renderChips();
+render();
+</script>
+</body>
+</html>
